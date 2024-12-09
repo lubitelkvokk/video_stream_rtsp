@@ -10,8 +10,6 @@ import java.net.Socket;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Server {
 
@@ -114,8 +112,8 @@ public class Server {
 
     private static void sendDescribeResponse(PrintWriter out, String cseq, String resourceName, String sessionId) throws NotFoundResourceException {
         String sdp = "v=0\r\n" +
-                "o=- " + sessionId + " " + sessionId + " IN IP4 " + IPV4 + "\r\n" +
-                "s=" + resourceName + "\r\n" +
+                "o=- " + sessionId + " " + 1 + " IN IP4 " + IPV4 + "\r\n" +
+                "s= CUSTOM JAVA RTSP SERVER\r\n" +
                 "c=IN IP4 " + IPV4 + "\r\n" +
                 "t=0 0\r\n" +
                 "a=sdplang:en\r\n" +
@@ -130,7 +128,7 @@ public class Server {
 
         String response = "RTSP/1.0 200 OK\r\n" +
                 "CSeq: " + cseq + "\r\n" +
-                "Content-Base: rtsp://127.0.0.1:5554/\r\n" +
+                "Content-Base: rtsp://127.0.0.1:5554/" + resourceName + "\r\n" +
                 "Content-Type: application/sdp\r\n" +
                 "Content-Length: " + sdp.length() + "\r\n\r\n" +
                 sdp;
@@ -140,17 +138,15 @@ public class Server {
     }
 
     private static void sendSetupResponse(PrintWriter out, String cseq, String resourceName, String RTP_AND_RTCP_PORTS) {
+        System.out.println("SETUP PORTS: " + RTP_AND_RTCP_PORTS);
         String setupResponse =
                 "RTSP/1.0 200 OK\r\n" +
                         "CSeq: " + cseq + "\r\n" +
                         "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
                         "Cache-Control: no-cache\r\n" +
-                        "Transport: RTP/AVP;unicast;client_port=" + RTP_AND_RTCP_PORTS + ";source=3.84.6.190;server_port=10002-10003;ssrc=7B32F2BF" +
-                        "Date:" +
-                        "Sun, 26 Apr 2020 07:36:42 UTC\r\n" +
-                        "Session:" +
-                        "1586167217;" +
-                        " timeout = 60" +
+                        "Transport: RTP/AVP;unicast;client_port=" + RTP_AND_RTCP_PORTS + ";source=127.0.0.1;server_port=10002-10003" +
+                        "Date: Sun, 26 Apr 2020 07:36:42 UTC\r\n" +
+                        "Session: 1\r\n" +
                         "\r\n";
         out.print(setupResponse);
         out.flush();
