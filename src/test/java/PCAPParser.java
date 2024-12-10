@@ -38,8 +38,8 @@ public class PCAPParser {
     }
 
     // Разделение RTP на аудио и видео
-    private static boolean isAudioRTP(int srcPort, int dstPort) {
-        return (srcPort >= 8000 && srcPort <= 9000) || (dstPort >= 8000 && dstPort <= 9000);
+    public static boolean isAudioRTP(String packet) {
+        return packet.contains("type = 97"); // type = 96 for video
     }
 
     public static void main(String[] args) {

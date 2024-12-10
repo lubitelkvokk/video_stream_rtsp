@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -15,6 +16,11 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private static final String IPV4 = "127.0.0.1";
+    private static final Integer rtpVideoPort = 10001;
+    private static final Integer rtcpVideoPort = 10002;
+    private static final Integer rtpAudioPort = 10003;
+    private static final Integer rtcpAudioPort = 10004;
+
 
     public void start(int port) {
         System.out.println("RTSP Server is starting...");
@@ -145,19 +151,35 @@ public class Server {
 
     private static void sendSetupResponse(PrintWriter out, String cseq, String resourceName, String RTP_AND_RTCP_PORTS) {
         System.out.println("SETUP PORTS: " + RTP_AND_RTCP_PORTS);
-        String setupResponse =
-                "RTSP/1.0 200 OK\r\n" +
-                        "CSeq: " + cseq + "\r\n" +
-                        "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
-                        "Cache-Control: no-cache\r\n" +
-                        "Transport: RTP/AVP;unicast;client_port=" + RTP_AND_RTCP_PORTS + ";source=127.0.0.1;server_port=10002-10003" +
-                        "Date: Sun, 26 Apr 2020 07:36:42 UTC\r\n" +
-                        "Session: 1\r\n" +
-                        "\r\n";
+        String ssrc = Util.randomHexString(8);
+        String setupResponse;
+        if (resourceName.equals("trackID=1")) {
+            setupResponse =
+                    "RTSP/1.0 200 OK\r\n" +
+                            "CSeq: " + cseq + "\r\n" +
+                            "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
+                            "Cache-Control: no-cache\r\n" +
+                            "Transport: RTP/AVP;unicast;client_port=" + RTP_AND_RTCP_PORTS + ";source=127.0.0.1;server_port=" + rtpVideoPort + "-" + rtcpVideoPort + ";ssrc=" + ssrc + "\r\n" +
+                            "Date: Sun, 26 Apr 2020 07:36:42 UTC\r\n" +
+                            "Session: 1\r\n" +
+                            "\r\n";
+        }
+        else {
+            setupResponse =
+                    "RTSP/1.0 200 OK\r\n" +
+                            "CSeq: " + cseq + "\r\n" +
+                            "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
+                            "Cache-Control: no-cache\r\n" +
+                            "Transport: RTP/AVP;unicast;client_port=" + RTP_AND_RTCP_PORTS + ";source=127.0.0.1;server_port=" + rtpAudioPort + "-" + rtcpAudioPort + ";ssrc=" + ssrc + "\r\n" +
+                            "Date: Sun, 26 Apr 2020 07:36:42 UTC\r\n" +
+                            "Session: 1\r\n" +
+                            "\r\n";
+        }
         out.print(setupResponse);
         out.flush();
         System.out.println("Sent SETUP response.");
     }
+
     private static void sendPlayResponse(PrintWriter out, String cseq, String resourceName, String sessionId) throws NotFoundResourceException {
         String playResponse = "RTSP/1.0 200 OK\r\n" +
                 "CSeq: " + cseq + "\r\n" +
