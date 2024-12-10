@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -91,6 +92,11 @@ public class Server {
                     String cseq = parseCSeq(in);
                     String RTP_AND_RTCP_PORTS = parseClientPort(in);
                     sendSetupResponse(out, cseq, resourceName, RTP_AND_RTCP_PORTS);
+                } else if (requestLine.startsWith("PLAY")) {
+                    String resourceName = parseResource(requestLine);
+                    String cseq = parseCSeq(in);
+                    sendPlayResponse(out, cseq, resourceName, sessionId);
+
                 }
             }
         }
@@ -151,6 +157,28 @@ public class Server {
         out.print(setupResponse);
         out.flush();
         System.out.println("Sent SETUP response.");
+    }
+    private static void sendPlayResponse(PrintWriter out, String cseq, String resourceName, String sessionId) throws NotFoundResourceException {
+        String playResponse = "RTSP/1.0 200 OK\r\n" +
+                "CSeq: " + cseq + "\r\n" +
+                "Date: Fri, Apr 23 2010 19:54:20 GMT\r\n" +
+                "Range: npt=0.000-\r\n" +
+                "Session: 1\r\n" +
+                "RTP-Info: " +
+                "url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=1;" +
+                "seq=1;" +
+                "rtptime=0,url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=2;" +
+                "seq=1;" +
+                "rtptime=0\\r\\n";
+        out.print(playResponse);
+        out.flush();
+
+//        List<Packet> packets =
+//                ResourceMapping.getResourceByName(resourceName).getPacketList();
+//        for (Packet p: packets){
+//            out.print(p);
+//            out.flush();
+//        }
     }
 
     private static void sendErrorResponse(PrintWriter out) {

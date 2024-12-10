@@ -2,9 +2,26 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>video-stream-rtsp</artifactId>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>23</source>
+                    <target>23</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <groupId>aboba</groupId>
     <version>1.0</version>
-
+    <repositories>
+        <repository>
+            <id>clojars</id>
+            <url>https://clojars.org/repo/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -13,6 +30,20 @@
             <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>jnetpcap</groupId>
+            <artifactId>jnetpcap</artifactId>
+            <version>1.5.r1457-1i</version>
+        </dependency>
+        <dependency>
+            <groupId>com.slytechs.jnet.jnetpcap</groupId>
+            <artifactId>jnetpcap-wrapper</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.14.0</version>
+        </dependency>
     </dependencies>
 </project>
