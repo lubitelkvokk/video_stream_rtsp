@@ -21,27 +21,27 @@ public class PCAPProcessor {
         long[] audioPacketCount = {0}; // Счетчик отправленных RTP пакетов (аудио)
         long[] audioOctetCount = {0};  // Счетчик отправленных байтов (аудио)
 
-//        new Thread(() -> {
-//            try {
-//                while (true) {
-//                    TimeUnit.SECONDS.sleep(2); // Интервал отправки RTCP пакетов
-//                    RTCPProcessor.sendSenderReport(
-//                            protocol.getRtcpVideoSocket(),
-//                            protocol.getConsumerIp(),
-//                            protocol.getRtcpVideoPortConsumer(),
-//                            (protocol.getRtcpVideoSSRC()),
-//                            videoPacketCount[0],
-//                            videoOctetCount[0]);
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }).start();
+        new Thread(() -> {
+            try {
+                while (true) {
+                    TimeUnit.SECONDS.sleep(5); // Интервал отправки RTCP пакетов
+                    RTCPProcessor.sendSenderReport(
+                            protocol.getRtcpVideoSocket(),
+                            protocol.getConsumerIp(),
+                            protocol.getRtcpVideoPortConsumer(),
+                            (protocol.getRtcpVideoSSRC()),
+                            videoPacketCount[0],
+                            videoOctetCount[0]);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
 
         new Thread(() -> {
             try {
                 while (true) {
-                    TimeUnit.SECONDS.sleep(1); // Интервал отправки RTCP пакетов
+                    TimeUnit.SECONDS.sleep(2); // Интервал отправки RTCP пакетов
                     RTCPProcessor.sendSenderReport(
                             protocol.getRtcpAudioSocket(),
                             protocol.getConsumerIp(),
