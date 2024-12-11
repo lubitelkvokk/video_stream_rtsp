@@ -80,7 +80,9 @@ public class Server {
         ) {
             System.out.println("New client connected: " + clientSocket.getInetAddress());
             String sessionId = generateSessionId();
-
+            Protocol protocol = new Protocol();
+            protocol.setConsumerIp(clientSocket.getInetAddress());
+            ResourceMapping.addProtocol(sessionId, protocol);
             String requestLine;
             while ((requestLine = in.readLine()) != null) {
                 System.out.println("Received: " + requestLine);
@@ -167,11 +169,15 @@ public class Server {
         // always not null
         Protocol protocol = ResourceMapping.getProtocolByName(sessionId);
         if (resourceName.equals("trackID=1")) {
+            // temp stub
+            ssrc = "7B32FBF";
             protocol.setRtcpVideoSSRC(ssrc);
+
             protocol.setRtpVideoPortConsumer(rtpAndRtcp[0]);
             protocol.setRtcpVideoPortConsumer(rtpAndRtcp[1]);
             protocol.setRtpVideoSocket(new DatagramSocket(rtpVideoPort));
             protocol.setRtcpVideoSocket(new DatagramSocket(rtcpVideoPort));
+
             // TODO where is we need to set consumer ip?
             setupResponse =
                     "RTSP/1.0 200 OK\r\n" +
@@ -183,6 +189,8 @@ public class Server {
                             "Session: 1\r\n" +
                             "\r\n";
         } else {
+            // temp stub
+            ssrc = "7CC6CBBE";
             protocol.setRtcpAudioSSRC(ssrc);
             protocol.setRtpAudioPortConsumer(rtpAndRtcp[0]);
             protocol.setRtcpAudioPortConsumer(rtpAndRtcp[1]);
@@ -207,16 +215,19 @@ public class Server {
 
     private static void sendPlayResponse(PrintWriter out, String cseq, String resourceName, String sessionId) throws NotFoundResourceException, InterruptedException {
         String playResponse = "RTSP/1.0 200 OK\r\n" +
-                "CSeq: " + cseq + "\r\n" +
-                "Date: Fri, Apr 23 2010 19:54:20 GMT\r\n" +
-                "Range: npt=0.000-\r\n" +
-                "Session: 1\r\n" +
                 "RTP-Info: " +
                 "url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=1;" +
                 "seq=1;" +
                 "rtptime=0,url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=2;" +
                 "seq=1;" +
-                "rtptime=0\\r\\n";
+                "rtptime=0\r\n" +
+                "CSeq: " + cseq + "\r\n" +
+                "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
+                "Cache-Control: no-cache\r\n" +
+                "Range: npt=0.000-\r\n" +
+                "Session: 1; timeout=60\r\n";
+
+
         out.print(playResponse);
         out.flush();
         PCAPProcessor.processPCAP(ResourceMapping.getResourceByName(resourceName),

@@ -1,6 +1,9 @@
 import org.jnetpcap.Pcap;
 import org.jnetpcap.packet.JPacket;
 import org.jnetpcap.packet.JPacketHandler;
+import org.jnetpcap.packet.PcapPacket;
+import org.jnetpcap.protocol.voip.Rtcp;
+import org.jnetpcap.protocol.voip.Rtp;
 import protocol.Protocol;
 import resource.ResourceData;
 import resource.ResourceMapping;
@@ -8,34 +11,35 @@ import resource.exceptions.NotFoundResourceException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public class Main {
-    private static int count = 0;
+private static int count = 0;
 
-    public static void main(String[] args) throws IOException, NotFoundResourceException, InterruptedException {
-        ResourceData re = new ResourceData();
-        re.setFilename("resources/bunny.pcapng");
-        re.setDuration(598.48);
-        StringBuilder errbuf = new StringBuilder();
-        Pcap pcap = Pcap.openOffline("resources/bunny.pcapng", errbuf);
-        List<String> packetList = new ArrayList<>();
-        int dataCountPacket = 15;
-        pcap.loop(-1, new JPacketHandler() {
-            @Override
-            public void nextPacket(JPacket jPacket, Object o) {
-                if (count > dataCountPacket) {
-                    packetList.add(jPacket.toString());
-                }
-                count++;
+public static void main(String[] args) throws IOException, NotFoundResourceException, InterruptedException {
+    ResourceData re = new ResourceData();
+    re.setFilename("resources/bunny.pcapng");
+    re.setDuration(598.48);
+    StringBuilder errbuf = new StringBuilder();
+    Pcap pcap = Pcap.openOffline("resources/bunny.pcapng", errbuf);
+    List<Rtp> packetList = new ArrayList<>();
+    TimeUnit.SECONDS.sleep(3);
+    pcap.loop(-1, new JPacketHandler() {
+        @Override
+        public void nextPacket(JPacket jPacket, Object o) {
+            Rtp rtp = new Rtp();
+            if (jPacket.hasHeader(rtp)) {
+                packetList.add(rtp);
             }
-        }, errbuf);
-        re.setPacketList(packetList);
+            count++;
+        }
+    }, errbuf);
+    re.setPacketList(packetList);
+    System.out.println(count);
 //
-        ResourceMapping.addResource("ad2e", re);
-        Server server = new Server();
-        server.start(5554);
+    ResourceMapping.addResource("ad2e", re);
+    Server server = new Server();
+    server.start(5554);
 //
-    }
-
 }
