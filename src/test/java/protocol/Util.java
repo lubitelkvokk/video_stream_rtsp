@@ -1,3 +1,5 @@
+package protocol;
+
 public class Util {
     public static String randomHexString(int length) {
         StringBuilder sb = new StringBuilder(length);

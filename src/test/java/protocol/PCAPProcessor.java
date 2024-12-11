@@ -1,17 +1,13 @@
-import org.jnetpcap.Pcap;
+package protocol;
+
 import org.jnetpcap.packet.JPacket;
-import org.jnetpcap.packet.JPacketHandler;
 import org.jnetpcap.protocol.voip.Rtp;
-import protocol.Protocol;
 import resource.ResourceData;
-import resource.ResourceMapping;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 public class PCAPProcessor {
@@ -27,7 +23,7 @@ public class PCAPProcessor {
 //            try {
 //                while (true) {
 //                    TimeUnit.SECONDS.sleep(4); // Интервал отправки RTCP пакетов
-//                    RTCPProcessor.sendSenderReport(
+//                    protocol.rtcp.RTCPProcessor.sendSenderReport(
 //                            protocol.getRtcpVideoSocket(),
 //                            protocol.getConsumerIp(),
 //                            protocol.getRtcpVideoPortConsumer(),
@@ -44,7 +40,7 @@ public class PCAPProcessor {
 //            try {
 //                while (true) {
 //                    TimeUnit.SECONDS.sleep(4); // Интервал отправки RTCP пакетов
-//                    RTCPProcessor.sendSenderReport(
+//                    protocol.rtcp.RTCPProcessor.sendSenderReport(
 //                            protocol.getRtcpAudioSocket(),
 //                            protocol.getConsumerIp(),
 //                            protocol.getRtcpAudioPortConsumer(),

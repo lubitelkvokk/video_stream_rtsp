@@ -1,5 +1,7 @@
+import protocol.PCAPProcessor;
 import protocol.Protocol;
 import protocol.RequestType;
+import protocol.Util;
 import resource.ResourceMapping;
 import resource.exceptions.NotFoundResourceException;
 
@@ -12,11 +14,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Date;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static protocol.RTSPUtil.*;
+import static protocol.rtsp.RTSPUtil.*;
 
 public class Server {
     private static final String IPV4 = "127.0.0.1";

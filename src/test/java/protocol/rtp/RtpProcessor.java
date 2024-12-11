@@ -1,6 +1,4 @@
-package protocol;
-
-import org.jnetpcap.protocol.voip.Rtp;
+package protocol.rtp;
 
 public class RtpProcessor {
     public static byte[] createRtpPacket() {
