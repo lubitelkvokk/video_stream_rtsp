@@ -44,7 +44,7 @@ public static void main(String[] args) throws IOException, NotFoundResourceExcep
     });
 
     pcapThread.start();
-
+    Thread.sleep(1000);
     pcapThread.join(); // Блокирует основной поток, пока pcapThread не завершится
 
     re.setPacketList(packetList);

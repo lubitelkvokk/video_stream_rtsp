@@ -2,12 +2,14 @@ package protocol;
 
 import org.jnetpcap.packet.JPacket;
 import org.jnetpcap.protocol.voip.Rtp;
+import protocol.rtcp.RTCPProcessor;
 import resource.ResourceData;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 public class PCAPProcessor {
@@ -22,8 +24,8 @@ public class PCAPProcessor {
 //        new Thread(() -> {
 //            try {
 //                while (true) {
-//                    TimeUnit.SECONDS.sleep(4); // Интервал отправки RTCP пакетов
-//                    protocol.rtcp.RTCPProcessor.sendSenderReport(
+//                    TimeUnit.SECONDS.sleep(2); // Интервал отправки RTCP пакетов
+//                    RTCPProcessor.sendSenderReport(
 //                            protocol.getRtcpVideoSocket(),
 //                            protocol.getConsumerIp(),
 //                            protocol.getRtcpVideoPortConsumer(),
@@ -36,22 +38,22 @@ public class PCAPProcessor {
 //            }
 //        }).start();
 
-//        new Thread(() -> {
-//            try {
-//                while (true) {
-//                    TimeUnit.SECONDS.sleep(4); // Интервал отправки RTCP пакетов
-//                    protocol.rtcp.RTCPProcessor.sendSenderReport(
-//                            protocol.getRtcpAudioSocket(),
-//                            protocol.getConsumerIp(),
-//                            protocol.getRtcpAudioPortConsumer(),
-//                            protocol.getRtcpAudioSSRC(),
-//                            audioPacketCount[0],
-//                            audioOctetCount[0]);
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }).start();
+        new Thread(() -> {
+            try {
+                while (true) {
+                    TimeUnit.SECONDS.sleep(1); // Интервал отправки RTCP пакетов
+                    RTCPProcessor.sendSenderReport(
+                            protocol.getRtcpAudioSocket(),
+                            protocol.getConsumerIp(),
+                            protocol.getRtcpAudioPortConsumer(),
+                            protocol.getRtcpAudioSSRC(),
+                            audioPacketCount[0],
+                            audioOctetCount[0]);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
 
         // Обработка RTP пакетов
         packetList.forEach(packet -> {
@@ -63,7 +65,6 @@ public class PCAPProcessor {
                 int port = 0;
                 DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
                 dp.setAddress(protocol.getConsumerIp());
-
                 if (PCAPParser.isAudioRTP(packet.toString())) {
                     port = protocol.getRtpAudioPortConsumer();
                     socket = protocol.getRtpAudioSocket();
