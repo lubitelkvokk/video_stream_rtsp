@@ -11,4 +11,5 @@ public class ResourceData {
     private String filename;
     private Double duration;
     private List<JPacket> packetList;
+    private String describeArea;
 }
