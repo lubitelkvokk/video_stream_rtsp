@@ -39,7 +39,7 @@ public class PCAPParser {
 
     // Разделение RTP на аудио и видео
     public static boolean isAudioRTP(String packet) {
-        return packet.contains("type = 97"); // type = 96 for video
+        return packet.contains("type = 96"); // type = 97 for video
     }
 
     public static void main(String[] args) {

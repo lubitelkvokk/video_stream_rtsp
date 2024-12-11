@@ -23,15 +23,11 @@ public static void main(String[] args) throws IOException, NotFoundResourceExcep
     re.setDuration(598.48);
     StringBuilder errbuf = new StringBuilder();
     Pcap pcap = Pcap.openOffline("resources/bunny.pcapng", errbuf);
-    List<Rtp> packetList = new ArrayList<>();
-    TimeUnit.SECONDS.sleep(3);
+    List<JPacket> packetList = new ArrayList<>();
     pcap.loop(-1, new JPacketHandler() {
         @Override
         public void nextPacket(JPacket jPacket, Object o) {
-            Rtp rtp = new Rtp();
-            if (jPacket.hasHeader(rtp)) {
-                packetList.add(rtp);
-            }
+            packetList.add(jPacket);
             count++;
         }
     }, errbuf);

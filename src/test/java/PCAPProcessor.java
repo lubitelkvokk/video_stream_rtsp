@@ -17,42 +17,85 @@ import java.util.concurrent.TimeUnit;
 public class PCAPProcessor {
 
     public static void processPCAP(ResourceData resourceData, Protocol protocol) {
-        List<Rtp> packetList = resourceData.getPacketList();
+        List<JPacket> packetList = resourceData.getPacketList();
+        long[] videoPacketCount = {0}; // Счетчик отправленных RTP пакетов (видео)
+        long[] videoOctetCount = {0};  // Счетчик отправленных байтов (видео)
+        long[] audioPacketCount = {0}; // Счетчик отправленных RTP пакетов (аудио)
+        long[] audioOctetCount = {0};  // Счетчик отправленных байтов (аудио)
+
+        // Создаем поток для отправки RTCP пакетов для видео
+//        new Thread(() -> {
+//            try {
+//                while (true) {
+//                    TimeUnit.SECONDS.sleep(5); // Интервал отправки RTCP пакетов
+//                    RTCPProcessor.sendSenderReport(
+//                            protocol.getRtcpVideoSocket(),
+//                            protocol.getConsumerIp(),
+//                            protocol.getRtcpVideoPortConsumer(),
+//                            (protocol.getRtcpVideoSSRC()),
+//                            videoPacketCount[0],
+//                            videoOctetCount[0]);
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }).start();
+
+        // Создаем поток для отправки RTCP пакетов для аудио
+//        new Thread(() -> {
+//            try {
+//                while (true) {
+//                    TimeUnit.SECONDS.sleep(5); // Интервал отправки RTCP пакетов
+//                    RTCPProcessor.sendSenderReport(
+//                            protocol.getRtcpAudioSocket(),
+//                            protocol.getConsumerIp(),
+//                            protocol.getRtcpAudioPortConsumer(),
+//                            protocol.getRtcpAudioSSRC(),
+//                            audioPacketCount[0],
+//                            audioOctetCount[0]);
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        }).start();
+
+        // Обработка RTP пакетов
         packetList.forEach(packet -> {
-            byte[] buffer = packet.getPayload();
-            DatagramSocket socket = null;
-            int port = 0;
-            DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
-            dp.setAddress(protocol.getConsumerIp());
-//            if (PCAPParser.parsePacket(packet.toString()).contains("RTP")) {
+            Rtp rtp = new Rtp();
+            byte[] buffer;
+            if (packet.hasHeader(rtp)) {
+                buffer = Util.addArrays(rtp.getHeader(), rtp.getPayload());
+                DatagramSocket socket = null;
+                int port = 0;
+                DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
+                dp.setAddress(protocol.getConsumerIp());
+
                 if (PCAPParser.isAudioRTP(packet.toString())) {
                     port = protocol.getRtpAudioPortConsumer();
                     socket = protocol.getRtpAudioSocket();
-
+                    audioPacketCount[0]++;
+                    audioOctetCount[0] += buffer.length;
                 } else {
                     port = protocol.getRtpVideoPortConsumer();
                     socket = protocol.getRtpVideoSocket();
+                    videoPacketCount[0]++;
+                    videoOctetCount[0] += buffer.length;
                 }
-//            } else if (PCAPParser.parsePacket(packet.toString()).contains("RTCP")) {
-//
-//                if (packet.toString().contains(protocol.getRtcpVideoSSRC())) {
-//                    port = protocol.getRtcpVideoPortConsumer();
-//                    socket = protocol.getRtcpVideoSocket();
-//                } else {
-//                    port = protocol.getRtcpAudioPortConsumer();
-//                    socket = protocol.getRtcpAudioSocket();
-//                }
-//            }
-//            try {
-//                if (socket == null) {
-//                    throw new Exception("Unknown packet type");
-//                }
-            dp.setPort(port);
-            try {
-                socket.send(dp);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+
+                dp.setPort(port);
+                try {
+                    socket.send(dp);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                try {
+                    Thread.sleep(25);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
+
+
 }

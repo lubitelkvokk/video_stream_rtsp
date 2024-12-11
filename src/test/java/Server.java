@@ -17,11 +17,11 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private static final String IPV4 = "127.0.0.1";
-    private static final Integer rtpVideoPort = 49188;
-    private static final Integer rtcpVideoPort = 49189;
-    private static final Integer rtpAudioPort = 49190;
-    private static final Integer rtcpAudioPort = 49191;
 
+    private static final Integer rtpAudioPort = 49188;
+    private static final Integer rtcpAudioPort = 49189;
+    private static final Integer rtpVideoPort = 49190;
+    private static final Integer rtcpVideoPort = 49191;
 
     public void start(int port) {
         System.out.println("RTSP Server is starting...");
@@ -106,7 +106,10 @@ public class Server {
                     String resourceName = parseResource(requestLine);
                     String cseq = parseCSeq(in);
                     sendPlayResponse(out, cseq, resourceName, sessionId);
-
+                } else if (requestLine.startsWith("TEARDOWN")) {
+                    String cseq = parseCSeq(in);
+                    sendTeardownResponse(out, cseq, sessionId);
+                    break; // Прерываем цикл обработки запросов
                 }
             }
         } catch (InterruptedException e) {
@@ -139,9 +142,14 @@ public class Server {
                 "a=control:*\r\n" +
                 "m=audio 0 RTP/AVP 96\r\n" +
                 "a=rtpmap:96 mpeg4-generic/12000/2\r\n" +
+                "a=fmtp:96 profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=1490\r\n" +
                 "a=control:trackID=1\r\n" +
                 "m=video 0 RTP/AVP 97\r\n" +
                 "a=rtpmap:97 H264/90000\r\n" +
+                "a=fmtp:97 packetization-mode=1;profile-level-id=42C01E;sprop-parameter-sets=Z0LAHtkDxWhAAAADAEAAAAwDxYuS,aMuMsg==\r\n" +
+                "a=cliprect:0,0,160,240\r\n" +
+                "a=framesize:97 240-160\r\n" +
+                "a=framerate:24.0\r\n" +
                 "a=control:trackID=2\r\n";
 
         String response = "RTSP/1.0 200 OK\r\n" +
@@ -171,12 +179,12 @@ public class Server {
         if (resourceName.equals("trackID=1")) {
             // temp stub
             ssrc = "7B32FBF";
-            protocol.setRtcpVideoSSRC(ssrc);
 
-            protocol.setRtpVideoPortConsumer(rtpAndRtcp[0]);
-            protocol.setRtcpVideoPortConsumer(rtpAndRtcp[1]);
-            protocol.setRtpVideoSocket(new DatagramSocket(rtpVideoPort));
-            protocol.setRtcpVideoSocket(new DatagramSocket(rtcpVideoPort));
+            protocol.setRtcpAudioSSRC(ssrc);
+            protocol.setRtpAudioPortConsumer(rtpAndRtcp[0]);
+            protocol.setRtcpAudioPortConsumer(rtpAndRtcp[1]);
+            protocol.setRtpAudioSocket(new DatagramSocket(rtpAudioPort));
+            protocol.setRtcpAudioSocket(new DatagramSocket(rtcpAudioPort));
 
             // TODO where is we need to set consumer ip?
             setupResponse =
@@ -191,11 +199,15 @@ public class Server {
         } else {
             // temp stub
             ssrc = "7CC6CBBE";
-            protocol.setRtcpAudioSSRC(ssrc);
-            protocol.setRtpAudioPortConsumer(rtpAndRtcp[0]);
-            protocol.setRtcpAudioPortConsumer(rtpAndRtcp[1]);
-            protocol.setRtpAudioSocket(new DatagramSocket(rtpAudioPort));
-            protocol.setRtcpAudioSocket(new DatagramSocket(rtcpAudioPort));
+
+            protocol.setRtcpVideoSSRC(ssrc);
+
+            protocol.setRtpVideoPortConsumer(rtpAndRtcp[0]);
+            protocol.setRtcpVideoPortConsumer(rtpAndRtcp[1]);
+            protocol.setRtpVideoSocket(new DatagramSocket(rtpVideoPort));
+            protocol.setRtcpVideoSocket(new DatagramSocket(rtcpVideoPort));
+
+
             setupResponse =
                     "RTSP/1.0 200 OK\r\n" +
                             "CSeq: " + cseq + "\r\n" +
@@ -214,34 +226,43 @@ public class Server {
     }
 
     private static void sendPlayResponse(PrintWriter out, String cseq, String resourceName, String sessionId) throws NotFoundResourceException, InterruptedException {
-        String playResponse = "RTSP/1.0 200 OK\r\n" +
-                "RTP-Info: " +
-                "url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=1;" +
-                "seq=1;" +
-                "rtptime=0,url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=2;" +
-                "seq=1;" +
-                "rtptime=0\r\n" +
-                "CSeq: " + cseq + "\r\n" +
-                "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
-                "Cache-Control: no-cache\r\n" +
-                "Range: npt=0.000-\r\n" +
-                "Session: 1; timeout=60\r\n";
+//        String setupResponse =
+//                        "CSeq: " + cseq + "\r\n" +
+//                        "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
+//                        "Cache-Control: no-cache\r\n" +
+////                        "Transport: RTP/AVP;unicast;client_port=" + RTP_AND_RTCP_PORTS + ";source=127.0.0.1;server_port=" + rtpAudioPort + "-" + rtcpAudioPort + ";ssrc=" + ssrc + "\r\n" +
+//                        "Date: Sun, 26 Apr 2020 07:36:42 UTC\r\n" +
+//                        "Session: 1\r\n" +
+//                        "\r\n";
+        String playResponse =
+                "RTSP/1.0 200 OK\r\n" +
+                        "Server: Wowza Streaming Engine 4.7.5.01 build21752\r\n" +
+                        "CSeq: " + cseq + "\r\n" +
+                        "RTP-Info: " +
+                        "url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=1;" +
+                        "seq=1;" +
+                        "rtptime=0,url=rtsp://127.0.0.1:5554/" + resourceName + "/trackID=2;" +
+                        "seq=1;" +
+                        "rtptime=0\r\n" +
+                        "Cache-Control: no-cache\r\n" +
+                        "Range: npt=0.0-596.48\r\n" +
+                        "Session: 1; timeout=60\r\n" +
+                        "\r\n";
 
 
         out.print(playResponse);
         out.flush();
         PCAPProcessor.processPCAP(ResourceMapping.getResourceByName(resourceName),
                 ResourceMapping.getProtocolByName(sessionId));
-//        List<Packet> packets =
-//                ResourceMapping.getResourceByName(resourceName).getPacketList();
-//        for (Packet p: packets){
-//            out.print(p);
-//            out.flush();
-//        }
     }
 
-    private static void sendErrorResponse(PrintWriter out) {
-
+    private static void sendTeardownResponse(PrintWriter out, String cseq, String sessionId) {
+        String response = "RTSP/1.0 200 OK\r\n" +
+                "CSeq: " + cseq + "\r\n" +
+                "Session: " + sessionId + "\r\n\r\n";
+        out.print(response);
+        out.flush();
+        System.out.println("Sent TEARDOWN response.");
     }
 
 }

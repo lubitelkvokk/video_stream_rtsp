@@ -1,6 +1,7 @@
 package resource;
 
 import lombok.Data;
+import org.jnetpcap.packet.JPacket;
 import org.jnetpcap.protocol.voip.Rtp;
 
 import java.util.List;
@@ -9,5 +10,5 @@ import java.util.List;
 public class ResourceData {
     private String filename;
     private Double duration;
-    private List<Rtp> packetList;
+    private List<JPacket> packetList;
 }
