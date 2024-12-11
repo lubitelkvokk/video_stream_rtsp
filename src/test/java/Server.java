@@ -1,3 +1,4 @@
+import protocol.Protocol;
 import resource.ResourceMapping;
 import resource.exceptions.NotFoundResourceException;
 
@@ -5,10 +6,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HexFormat;
-import java.util.List;
+import java.net.SocketException;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,10 +17,10 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private static final String IPV4 = "127.0.0.1";
-    private static final Integer rtpVideoPort = 10001;
-    private static final Integer rtcpVideoPort = 10002;
-    private static final Integer rtpAudioPort = 10003;
-    private static final Integer rtcpAudioPort = 10004;
+    private static final Integer rtpVideoPort = 49188;
+    private static final Integer rtcpVideoPort = 49189;
+    private static final Integer rtpAudioPort = 49190;
+    private static final Integer rtcpAudioPort = 49191;
 
 
     public void start(int port) {
@@ -79,6 +80,7 @@ public class Server {
         ) {
             System.out.println("New client connected: " + clientSocket.getInetAddress());
             String sessionId = generateSessionId();
+
             String requestLine;
             while ((requestLine = in.readLine()) != null) {
                 System.out.println("Received: " + requestLine);
@@ -97,7 +99,7 @@ public class Server {
                     String resourceName = parseResource(requestLine);
                     String cseq = parseCSeq(in);
                     String RTP_AND_RTCP_PORTS = parseClientPort(in);
-                    sendSetupResponse(out, cseq, resourceName, RTP_AND_RTCP_PORTS);
+                    sendSetupResponse(out, cseq, resourceName, RTP_AND_RTCP_PORTS, sessionId);
                 } else if (requestLine.startsWith("PLAY")) {
                     String resourceName = parseResource(requestLine);
                     String cseq = parseCSeq(in);
@@ -105,6 +107,8 @@ public class Server {
 
                 }
             }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -149,11 +153,26 @@ public class Server {
         System.out.println("Sent DESCRIBE response.");
     }
 
-    private static void sendSetupResponse(PrintWriter out, String cseq, String resourceName, String RTP_AND_RTCP_PORTS) {
+    private static int[] parsePorts(String RTP_AND_RTCP_PORTS) {
+        String[] rtpAndRtcp = RTP_AND_RTCP_PORTS.split("-");
+        return new int[]{Integer.parseInt(rtpAndRtcp[0]),
+                Integer.parseInt(rtpAndRtcp[1])};
+    }
+
+    private static void sendSetupResponse(PrintWriter out, String cseq, String resourceName, String RTP_AND_RTCP_PORTS, String sessionId) throws SocketException {
         System.out.println("SETUP PORTS: " + RTP_AND_RTCP_PORTS);
         String ssrc = Util.randomHexString(8);
         String setupResponse;
+        int[] rtpAndRtcp = parsePorts(RTP_AND_RTCP_PORTS);
+        // always not null
+        Protocol protocol = ResourceMapping.getProtocolByName(sessionId);
         if (resourceName.equals("trackID=1")) {
+            protocol.setRtcpVideoSSRC(ssrc);
+            protocol.setRtpVideoPortConsumer(rtpAndRtcp[0]);
+            protocol.setRtcpVideoPortConsumer(rtpAndRtcp[1]);
+            protocol.setRtpVideoSocket(new DatagramSocket(rtpVideoPort));
+            protocol.setRtcpVideoSocket(new DatagramSocket(rtcpVideoPort));
+            // TODO where is we need to set consumer ip?
             setupResponse =
                     "RTSP/1.0 200 OK\r\n" +
                             "CSeq: " + cseq + "\r\n" +
@@ -163,8 +182,12 @@ public class Server {
                             "Date: Sun, 26 Apr 2020 07:36:42 UTC\r\n" +
                             "Session: 1\r\n" +
                             "\r\n";
-        }
-        else {
+        } else {
+            protocol.setRtcpAudioSSRC(ssrc);
+            protocol.setRtpAudioPortConsumer(rtpAndRtcp[0]);
+            protocol.setRtcpAudioPortConsumer(rtpAndRtcp[1]);
+            protocol.setRtpAudioSocket(new DatagramSocket(rtpAudioPort));
+            protocol.setRtcpAudioSocket(new DatagramSocket(rtcpAudioPort));
             setupResponse =
                     "RTSP/1.0 200 OK\r\n" +
                             "CSeq: " + cseq + "\r\n" +
@@ -175,12 +198,14 @@ public class Server {
                             "Session: 1\r\n" +
                             "\r\n";
         }
+
+        ResourceMapping.addProtocol(sessionId, protocol);
         out.print(setupResponse);
         out.flush();
         System.out.println("Sent SETUP response.");
     }
 
-    private static void sendPlayResponse(PrintWriter out, String cseq, String resourceName, String sessionId) throws NotFoundResourceException {
+    private static void sendPlayResponse(PrintWriter out, String cseq, String resourceName, String sessionId) throws NotFoundResourceException, InterruptedException {
         String playResponse = "RTSP/1.0 200 OK\r\n" +
                 "CSeq: " + cseq + "\r\n" +
                 "Date: Fri, Apr 23 2010 19:54:20 GMT\r\n" +
@@ -194,7 +219,8 @@ public class Server {
                 "rtptime=0\\r\\n";
         out.print(playResponse);
         out.flush();
-
+        PCAPProcessor.processPCAP(ResourceMapping.getResourceByName(resourceName),
+                ResourceMapping.getProtocolByName(sessionId));
 //        List<Packet> packets =
 //                ResourceMapping.getResourceByName(resourceName).getPacketList();
 //        for (Packet p: packets){

@@ -14,6 +14,10 @@ public class ResourceMapping {
         resourceDataMap = new HashMap<>();
     }
 
+    private static void createProtocolMap() {
+        protocolMap = new HashMap<>();
+    }
+
     public static ResourceData getResourceByName(String name) throws NotFoundResourceException {
         if (resourceDataMap == null) {
             createResourceDataMap();
@@ -30,5 +34,23 @@ public class ResourceMapping {
             createResourceDataMap();
         }
         resourceDataMap.put(name, resourceData);
+    }
+
+    public static void addProtocol(String name, Protocol protocol) {
+        if (protocolMap == null) {
+            createProtocolMap();
+        }
+        protocolMap.put(name, protocol);
+    }
+
+    public static Protocol getProtocolByName(String name) {
+        if (protocolMap == null) {
+            createProtocolMap();
+        }
+        if (protocolMap.containsKey(name)) {
+            return protocolMap.get(name);
+        }
+        protocolMap.put(name, new Protocol());
+        return protocolMap.get(name);
     }
 }
